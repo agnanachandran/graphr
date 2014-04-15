@@ -1,0 +1,8 @@
+{
+    "name": "graphr-mean-d3",
+    "main": "server.js",
+    "dependencies": {
+        "express": "~3.5.0",
+        "mongoose": "~3.6.13"
+    }
+}

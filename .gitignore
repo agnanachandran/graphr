@@ -1,0 +1,10 @@
+*.sw*
+*~
+
+*.log
+
+node_modules/
+.sass-cache/
+public/stylesheets/*.css
+vendor/*
+public/fonts
