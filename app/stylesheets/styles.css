@@ -1,0 +1,16 @@
+#tutorial-container {
+  position: absolute;
+  bottom: 50%;
+  left: 40%;
+  right: 40%;
+  text-align: center; }
+
+#bg-watermark {
+  color: #aaaaaa;
+  text-align: center;
+  vertical-align: center;
+  font-size: 4em;
+  font-weight: 500; }
+
+#tutorial {
+  color: #aaaaaa; }
