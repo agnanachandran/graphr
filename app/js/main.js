@@ -66,11 +66,11 @@ for (var i = 0, len = dataset.edges.length; i < len; i++) {
 // Map weights to pixel values with a scale
 var weightScale = d3.scale.linear()
                     .domain([0, maxWeight])
-                    .range([30, 100]);
+                    .range([50, 300]);
 
 var nodeRadiusScale = d3.scale.linear()
                     .domain([1, MAX_NUMBER_OF_NODES])
-                    .range([35, 5]);
+                    .range([65, 5]);
 
 var svg = d3.select('body').append('svg'); // Append svg element
 

@@ -1,48 +1,56 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="utf-8" />
-    <base href="/">
+    <head>
+        <meta charset="utf-8" />
+        <base href="/">
 
-    <title>Graph to your heart's content</title>
+        <title>Graph to your heart's content</title>
 
-    <!-- CSS -->
-    <link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="stylesheets/styles.css">
+        <!-- CSS -->
+        <link rel="stylesheet" href="libs/bootstrap/dist/css/bootstrap.min.css">
+        <link rel="stylesheet" href="stylesheets/styles.css">
 
-    <!-- JS -->
-    <!-- Libraries & Frameworks -->
-    <script src="libs/angular/angular.min.js"></script>
-    <script src="libs/angular-route/angular-route.min.js"></script>
-    <script src="libs/d3/d3.min.js"></script>
-    <script src="libs/jquery/dist/jquery.min.js"></script>
+        <!-- JS -->
+        <!-- Libraries & Frameworks -->
+        <script src="libs/angular/angular.min.js"></script>
+        <script src="libs/angular-route/angular-route.min.js"></script>
+        <script src="libs/d3/d3.min.js"></script>
+        <script src="libs/jquery/dist/jquery.min.js"></script>
 
-    <!-- Angular, Node, etc. -->
+        <!-- Angular, Node, etc. -->
 
-    <script src="js/controllers/MainCtrl.js"></script>
-    <script src="js/appRoutes.js"></script>
-    <script src="js/app.js"></script>
-    <!--<script src="js/services/GraphService.js"></script>-->
-</head>
+        <script src="js/controllers/MainCtrl.js"></script>
+        <script src="js/appRoutes.js"></script>
+        <script src="js/app.js"></script>
+        <!--<script src="js/services/GraphService.js"></script>-->
+    </head>
 
-<body ng-app="graphrApp" ng-controller="MainController">
-    <header>
-        <nav class="navbar navbar-inverse">
-            <div class="navbar-header">
-                <a class="navbar-brand" href="/">Graphr</a>
+    <body ng-app="graphrApp" ng-controller="MainController">
+        <header>
+            <nav class="navbar navbar-inverse">
+                <div class="navbar-header">
+                    <a class="navbar-brand" href="/">Graphr</a>
+                </div>
+
+                <ul class="nav navbar-nav">
+                    <li><a href="/">Home</a></li>
+                </ul>
+            </nav>
+        </header>
+
+        <div ng-view></div>
+
+        <div id="footer-container">
+            <div class="checkbox">
+                <label>
+                    <input type="checkbox" ng-model="frozen"> Freeze Nodes
+                </label>
             </div>
+        </div>
 
-            <ul class="nav navbar-nav">
-                <li><a href="/">Home</a></li>
-            </ul>
-        </nav>
-    </header>
-
-    <div ng-view></div>
-
-    <footer>
-        <script src="js/main.js"></script>
-    </footer>
-</body>
+        <footer>
+            <script src="js/main.js"></script>
+        </footer>
+    </body>
 </html>
 
