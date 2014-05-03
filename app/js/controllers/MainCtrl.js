@@ -74,7 +74,7 @@ app.directive('pzGraphVis', function() {
                 .links(dataset.edges)
                 .size([WIDTH, HEIGHT])
                 .linkDistance(function(d, i) {
-                    return weightScale(dataset.edges[i].weight);
+                    return weightScale(d.weight);
                 })
             .charge([-1000])
                 .start();
@@ -93,10 +93,41 @@ app.directive('pzGraphVis', function() {
                 .attr('r', function(d, i) {
                     return nodeRadiusScale(dataset.nodes.length);
                 })
-            .style('fill', '#fefefe')
+                .attr('class', function() {
+                    return 'node';
+                })
+                .attr('id', function(d, i) {
+                    return 'node_' + i;
+                })
+                .style('fill', '#fefefe')
                 .style('stroke', '#111')
                 .style('stroke-width', 1)
                 .call(forceLayout.drag);
+
+            var textLabels = svg.selectAll('text.label')
+                .data(dataset.nodes)
+                .enter()
+                .append('text')
+                .attr('text-anchor', 'middle')
+                .attr("dy", ".35em")
+                .text(function(d, i) {
+                    return d.name;
+                });
+            //var path = svg.append("g").selectAll(".link")
+                //.data(forceLayout.links())
+                //.enter().append("path")
+                //.attr("id",function(d,i) { return "linkId_" + i; });
+
+            //var labelText = svg.selectAll(".labelText")
+                //.data(forceLayout.links())
+                //.enter().append("text")
+                //.attr("class","labelText")
+                //.attr("dx",20)
+                //.attr("dy",0)
+                //.style("fill","red")
+                //.append("textPath")
+                //.attr("xlink:href",function(d,i) { return "#linkId_" + i;})
+                //.text(function(d,i) { return "text for link " + i;});
 
             nodes.on('click', function() {
                 $("#tutorial-container").fadeOut("medium");
@@ -108,8 +139,12 @@ app.directive('pzGraphVis', function() {
                 .attr("x2", function(d) { return d.target.x; })
                 .attr("y2", function(d) { return d.target.y; });
 
-            nodes.attr('cx', function(d) { return d.x; })
-                .attr('cy', function(d) { return d.y; });
+                nodes.attr('cx', function(d) { return d.x; })
+                    .attr('cy', function(d) { return d.y; });
+                
+                textLabels.attr('transform', function(d) {
+                    return "translate(" + d.x + "," + d.y + ")";
+                })
             });
 
         }
