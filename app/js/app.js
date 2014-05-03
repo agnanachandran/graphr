@@ -1,1 +1,1 @@
-angular.module('graphrApp', ['ngRoute', 'appRoutes', 'MainCtrl']);
+angular.module('graphrApp', ['ngRoute', 'appRoutes', 'MainCtrl', ]);
