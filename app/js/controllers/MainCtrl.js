@@ -21,16 +21,20 @@ app.controller('MainController', function($scope) {
             { source: 2, target: 3, weight: 3}
         ]
     };
+    $scope.freezeNodes = function(checkValue) {
+        var datasetNodes = $scope.dataset.nodes;
+        if (checkValue) {
+            for (var i = 0, len = datasetNodes.length; i < len; i++) {
+               datasetNodes[i].fixed = true; 
+            }
+        } else {
+            for (var i = 0, len = datasetNodes.length; i < len; i++) {
+               datasetNodes[i].fixed = false; 
+            }
+        }
+    }
 });
 
-app.directive('pzFooterContainer', function () {
-    return {
-        restrict: 'E',
-        controller: function ($rootScope, $scope, $el) {
-        },
-        templateUrl: 'footer.html'
-    };
-});
 app.directive('pzGraphVis', function() {
     return {
         restrict: 'E',
