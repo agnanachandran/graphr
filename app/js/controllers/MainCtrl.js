@@ -33,16 +33,25 @@ app.controller('MainController', function($scope) {
             }
         }
     }
+
+    $scope.alertClickedNode = function(d, i) {
+        var datasetNodes = $scope.dataset.nodes;
+        //datasetNodes[i].name = 'LOL';
+        $scope.selectedNode = i;
+    }
 });
 
 app.directive('pzGraphVis', function() {
     return {
         restrict: 'E',
         replace: false,
-        scope: {dataset: '=graphData'},
+        scope: false,
         link: function(scope, el, attrs) {
             // Setup
             var dataset = scope.dataset;
+            if (dataset) {
+                $("#tutorial-container").fadeOut("medium");
+            }
             var WIDTH = 1680;
             var HEIGHT = 800;
             var MAX_NUMBER_OF_NODES = 20;
@@ -105,7 +114,7 @@ app.directive('pzGraphVis', function() {
                 .style('stroke-width', 1)
                 .call(forceLayout.drag);
 
-            var textLabels = svg.selectAll('text.label')
+            var nodeInnerLabels = svg.selectAll('text.label')
                 .data(dataset.nodes)
                 .enter()
                 .append('text')
@@ -113,10 +122,11 @@ app.directive('pzGraphVis', function() {
                 .attr("dy", ".35em")
                 .text(function(d, i) {
                     return d.name;
-                });
+                })
+                .call(forceLayout.drag);
 
-                var linktext = svg.selectAll("g.linklabelholder").data(dataset.edges);
-                linktext.enter().append("g").attr("class", "linklabelholder")
+            var linktext = svg.selectAll("g.linklabelholder").data(dataset.edges);
+            linktext.enter().append("g").attr("class", "linklabelholder")
                 .append("text")
                 .attr("class", "linklabel")
                 .attr("dx", 1)
@@ -124,8 +134,22 @@ app.directive('pzGraphVis', function() {
                 .attr("text-anchor", "middle")
                 .text(function(d) { return d.weight; });
 
-            nodes.on('click', function() {
-                $("#tutorial-container").fadeOut("medium");
+            nodes.on('click', function(d,i) {
+                nodes.style('stroke-width', function(d, i) {
+                    if (i === scope.selectedNode) {
+                       return 1; 
+                    }
+                });
+                scope.alertClickedNode(d,i);
+                nodes.style('stroke-width', function(d, i) {
+                    if (i === scope.selectedNode) {
+                       return 2; 
+                    }
+                });
+                nodeInnerLabels.text(function(d, i) {
+                    return d.name;
+                });
+
             });
 
             forceLayout.on('tick', function() {
@@ -137,7 +161,7 @@ app.directive('pzGraphVis', function() {
                 nodes.attr('cx', function(d) { return d.x; })
                     .attr('cy', function(d) { return d.y; });
                 
-                textLabels.attr('transform', function(d) {
+                nodeInnerLabels.attr('transform', function(d) {
                     return "translate(" + d.x + "," + d.y + ")";
                 });
 
