@@ -72,7 +72,7 @@ app.directive('pzGraphVis', function() {
 
             var nodeRadiusScale = d3.scale.linear()
                 .domain([1, MAX_NUMBER_OF_NODES])
-                .range([65, 5]);
+                .range([75, 10]);
 
             var svg = d3.select(el[0]).append('svg'); // Append svg element
 
@@ -88,8 +88,9 @@ app.directive('pzGraphVis', function() {
             var forceNodes = forceLayout.nodes();
             var forceLinks = forceLayout.links();
 
-            function addNode() {
+            function addNodeToIndex(i) {
                 forceNodes.push({name: 'LOL'});
+                forceLinks.push({source: forceNodes.length - 1, target: i, weight: Math.ceil(Math.random()*5)});
                 update();
             }
 
@@ -102,6 +103,7 @@ app.directive('pzGraphVis', function() {
 
             function update() {
 
+                // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
                 var edges = svg.selectAll('line')
                     .data(forceLinks);
                 edges.enter()
@@ -162,7 +164,7 @@ app.directive('pzGraphVis', function() {
                         svg.selectAll('text.nodelabel').text(function(d, i) {
                             return d.name;
                         });
-                        addNode();
+                        addNodeToIndex(i);
                     }
                 });
 
