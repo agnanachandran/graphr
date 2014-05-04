@@ -58,7 +58,7 @@ app.directive('pzGraphVis', function() {
             // Map weights to pixel values with a scale
             var weightScale = d3.scale.linear()
                 .domain([0, maxWeight])
-                .range([50, 300]);
+                .range([70, 300]);
 
             var nodeRadiusScale = d3.scale.linear()
                 .domain([1, MAX_NUMBER_OF_NODES])
@@ -76,14 +76,15 @@ app.directive('pzGraphVis', function() {
                 .linkDistance(function(d, i) {
                     return weightScale(d.weight);
                 })
-            .charge([-1000])
+                .charge([-1000])
                 .start();
 
             var edges = svg.selectAll('line')
                 .data(dataset.edges)
                 .enter()
                 .append('line')
-                .style('stroke', '#111')
+                .style('stroke', '#bbb')
+                .style("stroke-dasharray", ("4, 4"))
                 .style('stroke-width', 1);
 
             var nodes = svg.selectAll('circle')
@@ -113,21 +114,15 @@ app.directive('pzGraphVis', function() {
                 .text(function(d, i) {
                     return d.name;
                 });
-            //var path = svg.append("g").selectAll(".link")
-                //.data(forceLayout.links())
-                //.enter().append("path")
-                //.attr("id",function(d,i) { return "linkId_" + i; });
 
-            //var labelText = svg.selectAll(".labelText")
-                //.data(forceLayout.links())
-                //.enter().append("text")
-                //.attr("class","labelText")
-                //.attr("dx",20)
-                //.attr("dy",0)
-                //.style("fill","red")
-                //.append("textPath")
-                //.attr("xlink:href",function(d,i) { return "#linkId_" + i;})
-                //.text(function(d,i) { return "text for link " + i;});
+                var linktext = svg.selectAll("g.linklabelholder").data(dataset.edges);
+                linktext.enter().append("g").attr("class", "linklabelholder")
+                .append("text")
+                .attr("class", "linklabel")
+                .attr("dx", 1)
+                .attr("dy", ".35em")
+                .attr("text-anchor", "middle")
+                .text(function(d) { return d.weight; });
 
             nodes.on('click', function() {
                 $("#tutorial-container").fadeOut("medium");
@@ -144,7 +139,13 @@ app.directive('pzGraphVis', function() {
                 
                 textLabels.attr('transform', function(d) {
                     return "translate(" + d.x + "," + d.y + ")";
-                })
+                });
+
+                // link label
+                linktext.attr("transform", function(d) {
+                    return "translate(" + (d.source.x + d.target.x) / 2 + "," 
+                    + (d.source.y + d.target.y) / 2 + ")"; 
+                });
             });
 
         }
