@@ -93,12 +93,12 @@ app.directive('pzGraphVis', function() {
                 update();
             }
 
-            setTimeout(function() {
-                var a = {name: "a"}, b = {name: "b"}, c = {name: "c"};
-                forceNodes.push(a,b,c);
-                //dataset.edges.push({source: 0, target: 1}, {source: 3, target: 4}, {source: 5, target: 6});
-                addNode();
-            }, 3000);
+            //setTimeout(function() {
+                //var a = {name: "a"}, b = {name: "b"}, c = {name: "c"};
+                //forceNodes.push(a,b,c);
+                ////dataset.edges.push({source: 0, target: 1}, {source: 3, target: 4}, {source: 5, target: 6});
+                //addNode();
+            //}, 3000);
 
             function update() {
 
@@ -117,10 +117,9 @@ app.directive('pzGraphVis', function() {
                 var nodes = svg.selectAll('circle')
                     .data(forceNodes);
                 nodes.enter()
-                    .append('circle');
-                nodes.attr('r', function(d, i) {
-                        return nodeRadiusScale(forceNodes.length);
-                    })
+                    .append('circle')
+                    .call(forceLayout.drag);
+                nodes
                     .attr('class', 'node')
                     .attr('id', function(d, i) {
                         return 'node_' + i;
@@ -128,29 +127,51 @@ app.directive('pzGraphVis', function() {
                     .style('fill', '#fefefe')
                     .style('stroke', '#111')
                     .style('stroke-width', 1)
-                    .call(forceLayout.drag);
+                    .transition().duration(1500).ease('elastic')
+                    .attr('r', function(d, i) {
+                        return nodeRadiusScale(forceNodes.length);
+                    });
 
                 nodes.exit().remove();
 
                 nodes.on('click', function(d,i) {
-                    nodes.style('stroke-width', function(d, i) {
-                        if (i === scope.selectedNode) {
-                        return 1; 
+                    if (d3.event.shiftKey) {
+                        forceNodes.splice(i, 1);
+                        var j = 0;
+                        while (j < forceLinks.length) {
+                            if (forceLinks[j].source.index === i || forceLinks[j].target.index === i) {
+                                forceLinks.splice(j, 1);
+                            } else {
+                                j++;
+                            }
                         }
-                    });
-                    scope.alertClickedNode(d,i);
-                    nodes.style('stroke-width', function(d, i) {
-                        if (i === scope.selectedNode) {
-                        return 2; 
-                        }
-                    });
-                    svg.selectAll('text.nodelabel').text(function(d, i) {
-                        return d.name;
-                    });
+                        //console.log(forceLinks);
+                        update();
+                    } else {
+                        nodes.style('stroke-width', function(d, i) {
+                            if (i === scope.selectedNode) {
+                            return 1; 
+                            }
+                        });
+                        scope.alertClickedNode(d,i);
+                        nodes.style('stroke-width', function(d, i) {
+                            if (i === scope.selectedNode) {
+                            return 2; 
+                            }
+                        });
+                        svg.selectAll('text.nodelabel').text(function(d, i) {
+                            return d.name;
+                        });
+                        addNode();
+                    }
                 });
+
+                // TODO: figure out how to drag even on text; alternatively, use images or something else, e.g. position a transparent element immediately on top. Can also move nodeInnerLabels to be below the nodes by moving these lines immediately below to be above 'var nodes = ...', and making the fill 'transparent' for the nodes. However, this results in the links being seen through the nodes.
 
                 var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
                     .data(forceNodes);
+                nodeInnerLabels.call(forceLayout.drag);
+                nodeInnerLabels.exit().remove();
                 nodeInnerLabels
                     .enter()
                     .append('g')
@@ -159,19 +180,17 @@ app.directive('pzGraphVis', function() {
                     .attr('class','nodelabel')
                     .attr('text-anchor', 'middle')
                     .attr("dy", ".35em")
-                    .text(function(d, i) {
-                        return d.name;
-                    })
-                    .call(forceLayout.drag);
+                    .text(function(d, i) { return d.name; });
 
-                var linktext = svg.selectAll("g.linklabelholder").data(forceLinks);
-                linktext.enter().append("g").attr("class", "linklabelholder")
+                var linkText = svg.selectAll("g.linklabelholder").data(forceLinks);
+                linkText.enter().append("g").attr("class", "linklabelholder")
                     .append("text")
                     .attr("class", "linklabel")
                     .attr("dx", 1)
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
                     .text(function(d) { return d.weight; });
+                linkText.exit().remove();
 
                 forceLayout.linkDistance(function(d, i) {
                     return weightScale(d.weight);
@@ -184,10 +203,10 @@ app.directive('pzGraphVis', function() {
                         .attr("x2", function(d) { return d.target.x; })
                         .attr("y2", function(d) { return d.target.y; });
 
-                    nodes.attr('cx', function(d) { return d.x; })
-                        .attr('cy', function(d) { return d.y; });
+                    //nodes.attr('cx', function(d) { return d.x; })
+                        //.attr('cy', function(d) { return d.y; });
 
-                //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+                nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
                 
                     
                     nodeInnerLabels.attr('transform', function(d) {
@@ -195,7 +214,7 @@ app.directive('pzGraphVis', function() {
                     });
 
                     // link label
-                    linktext.attr("transform", function(d) {
+                    linkText.attr("transform", function(d) {
                         return "translate(" + (d.source.x + d.target.x) / 2 + "," 
                         + (d.source.y + d.target.y) / 2 + ")"; 
                     });
