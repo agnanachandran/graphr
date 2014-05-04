@@ -57,6 +57,7 @@ app.directive('pzGraphVis', function() {
             var MAX_NUMBER_OF_NODES = 20;
 
             // Calculate max weight for weightScale
+            // TODO: update this since we're adding nodes now
             var maxWeight = 1;
             for (var i = 0, len = dataset.edges.length; i < len; i++) {
                 if (dataset.edges[i].weight > maxWeight) {
@@ -79,98 +80,129 @@ app.directive('pzGraphVis', function() {
             svg.attr('height', HEIGHT);
 
             var forceLayout = d3.layout.force()
-                .nodes(dataset.nodes)
-                .links(dataset.edges)
                 .size([WIDTH, HEIGHT])
-                .linkDistance(function(d, i) {
+                .charge([-1000]);
+
+            forceLayout.nodes(dataset.nodes);
+            forceLayout.links(dataset.edges);
+            var forceNodes = forceLayout.nodes();
+            var forceLinks = forceLayout.links();
+
+            function addNode() {
+                forceNodes.push({name: 'LOL'});
+                update();
+            }
+
+            setTimeout(function() {
+                var a = {name: "a"}, b = {name: "b"}, c = {name: "c"};
+                forceNodes.push(a,b,c);
+                //dataset.edges.push({source: 0, target: 1}, {source: 3, target: 4}, {source: 5, target: 6});
+                addNode();
+            }, 3000);
+
+            function update() {
+
+                var edges = svg.selectAll('line')
+                    .data(forceLinks);
+                edges.enter()
+                    .append('line')
+                    .attr('class', 'link');
+
+                edges.style('stroke', '#bbb')
+                    .style("stroke-dasharray", ("4, 4"))
+                    .style('stroke-width', 1);
+
+                edges.exit().remove();
+
+                var nodes = svg.selectAll('circle')
+                    .data(forceNodes);
+                nodes.enter()
+                    .append('circle');
+                nodes.attr('r', function(d, i) {
+                        return nodeRadiusScale(forceNodes.length);
+                    })
+                    .attr('class', 'node')
+                    .attr('id', function(d, i) {
+                        return 'node_' + i;
+                    })
+                    .style('fill', '#fefefe')
+                    .style('stroke', '#111')
+                    .style('stroke-width', 1)
+                    .call(forceLayout.drag);
+
+                nodes.exit().remove();
+
+                nodes.on('click', function(d,i) {
+                    nodes.style('stroke-width', function(d, i) {
+                        if (i === scope.selectedNode) {
+                        return 1; 
+                        }
+                    });
+                    scope.alertClickedNode(d,i);
+                    nodes.style('stroke-width', function(d, i) {
+                        if (i === scope.selectedNode) {
+                        return 2; 
+                        }
+                    });
+                    svg.selectAll('text.nodelabel').text(function(d, i) {
+                        return d.name;
+                    });
+                });
+
+                var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
+                    .data(forceNodes);
+                nodeInnerLabels
+                    .enter()
+                    .append('g')
+                    .attr('class', 'nodelabelholder')
+                    .append('text')
+                    .attr('class','nodelabel')
+                    .attr('text-anchor', 'middle')
+                    .attr("dy", ".35em")
+                    .text(function(d, i) {
+                        return d.name;
+                    })
+                    .call(forceLayout.drag);
+
+                var linktext = svg.selectAll("g.linklabelholder").data(forceLinks);
+                linktext.enter().append("g").attr("class", "linklabelholder")
+                    .append("text")
+                    .attr("class", "linklabel")
+                    .attr("dx", 1)
+                    .attr("dy", ".35em")
+                    .attr("text-anchor", "middle")
+                    .text(function(d) { return d.weight; });
+
+                forceLayout.linkDistance(function(d, i) {
                     return weightScale(d.weight);
-                })
-                .charge([-1000])
-                .start();
-
-            var edges = svg.selectAll('line')
-                .data(dataset.edges)
-                .enter()
-                .append('line')
-                .style('stroke', '#bbb')
-                .style("stroke-dasharray", ("4, 4"))
-                .style('stroke-width', 1);
-
-            var nodes = svg.selectAll('circle')
-                .data(dataset.nodes)
-                .enter()
-                .append('circle')
-                .attr('r', function(d, i) {
-                    return nodeRadiusScale(dataset.nodes.length);
-                })
-                .attr('class', function() {
-                    return 'node';
-                })
-                .attr('id', function(d, i) {
-                    return 'node_' + i;
-                })
-                .style('fill', '#fefefe')
-                .style('stroke', '#111')
-                .style('stroke-width', 1)
-                .call(forceLayout.drag);
-
-            var nodeInnerLabels = svg.selectAll('text.label')
-                .data(dataset.nodes)
-                .enter()
-                .append('text')
-                .attr('text-anchor', 'middle')
-                .attr("dy", ".35em")
-                .text(function(d, i) {
-                    return d.name;
-                })
-                .call(forceLayout.drag);
-
-            var linktext = svg.selectAll("g.linklabelholder").data(dataset.edges);
-            linktext.enter().append("g").attr("class", "linklabelholder")
-                .append("text")
-                .attr("class", "linklabel")
-                .attr("dx", 1)
-                .attr("dy", ".35em")
-                .attr("text-anchor", "middle")
-                .text(function(d) { return d.weight; });
-
-            nodes.on('click', function(d,i) {
-                nodes.style('stroke-width', function(d, i) {
-                    if (i === scope.selectedNode) {
-                       return 1; 
-                    }
-                });
-                scope.alertClickedNode(d,i);
-                nodes.style('stroke-width', function(d, i) {
-                    if (i === scope.selectedNode) {
-                       return 2; 
-                    }
-                });
-                nodeInnerLabels.text(function(d, i) {
-                    return d.name;
                 });
 
-            });
+                forceLayout.start();
+                forceLayout.on('tick', function() {
+                    edges.attr('x1', function(d) { return d.source.x; })
+                        .attr("y1", function(d) { return d.source.y; })
+                        .attr("x2", function(d) { return d.target.x; })
+                        .attr("y2", function(d) { return d.target.y; });
 
-            forceLayout.on('tick', function() {
-                edges.attr('x1', function(d) { return d.source.x; })
-                .attr("y1", function(d) { return d.source.y; })
-                .attr("x2", function(d) { return d.target.x; })
-                .attr("y2", function(d) { return d.target.y; });
+                    nodes.attr('cx', function(d) { return d.x; })
+                        .attr('cy', function(d) { return d.y; });
 
-                nodes.attr('cx', function(d) { return d.x; })
-                    .attr('cy', function(d) { return d.y; });
+                //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
                 
-                nodeInnerLabels.attr('transform', function(d) {
-                    return "translate(" + d.x + "," + d.y + ")";
-                });
+                    
+                    nodeInnerLabels.attr('transform', function(d) {
+                        return "translate(" + d.x + "," + d.y + ")";
+                    });
 
-                // link label
-                linktext.attr("transform", function(d) {
-                    return "translate(" + (d.source.x + d.target.x) / 2 + "," 
-                    + (d.source.y + d.target.y) / 2 + ")"; 
+                    // link label
+                    linktext.attr("transform", function(d) {
+                        return "translate(" + (d.source.x + d.target.x) / 2 + "," 
+                        + (d.source.y + d.target.y) / 2 + ")"; 
+                    });
                 });
-            });
+            }
+
+            update();
 
         }
     };
