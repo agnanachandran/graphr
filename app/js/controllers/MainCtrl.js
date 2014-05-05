@@ -94,13 +94,6 @@ app.directive('pzGraphVis', function() {
                 update();
             }
 
-            //setTimeout(function() {
-                //var a = {name: "a"}, b = {name: "b"}, c = {name: "c"};
-                //forceNodes.push(a,b,c);
-                ////dataset.edges.push({source: 0, target: 1}, {source: 3, target: 4}, {source: 5, target: 6});
-                //addNode();
-            //}, 3000);
-
             function update() {
 
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
@@ -128,7 +121,9 @@ app.directive('pzGraphVis', function() {
                     })
                     .style('fill', '#fefefe')
                     .style('stroke', '#111')
-                    .style('stroke-width', 1)
+                    .style('stroke-width', function(d, i) {
+                        return i === scope.selectedNode ? 2 : 1;
+                    })
                     .transition().duration(1500).ease('elastic')
                     .attr('r', function(d, i) {
                         return nodeRadiusScale(forceNodes.length);
@@ -150,20 +145,7 @@ app.directive('pzGraphVis', function() {
                         //console.log(forceLinks);
                         update();
                     } else {
-                        nodes.style('stroke-width', function(d, i) {
-                            if (i === scope.selectedNode) {
-                            return 1; 
-                            }
-                        });
                         scope.alertClickedNode(d,i);
-                        nodes.style('stroke-width', function(d, i) {
-                            if (i === scope.selectedNode) {
-                            return 2; 
-                            }
-                        });
-                        svg.selectAll('text.nodelabel').text(function(d, i) {
-                            return d.name;
-                        });
                         addNodeToIndex(i);
                     }
                 });
@@ -173,7 +155,7 @@ app.directive('pzGraphVis', function() {
                 var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
                     .data(forceNodes);
                 nodeInnerLabels.call(forceLayout.drag);
-                nodeInnerLabels.exit().remove();
+                nodeInnerLabels.exit().remove(); // TODO: make it fade out nicely?
                 nodeInnerLabels
                     .enter()
                     .append('g')
@@ -183,6 +165,7 @@ app.directive('pzGraphVis', function() {
                     .attr('text-anchor', 'middle')
                     .attr("dy", ".35em")
                     .text(function(d, i) { return d.name; });
+                // TODO: make nodeText and linkText scales. Also transition().
 
                 var linkText = svg.selectAll("g.linklabelholder").data(forceLinks);
                 linkText.enter().append("g").attr("class", "linklabelholder")
