@@ -5,7 +5,8 @@ module.exports = function(app, factory) {
         res.sendfile('./app/index.html');
     });
 
-    app.get('/graph/alpha', function(req, res) {
-        var resp = factory.getGraph({name:'AlphaBetaGamma'}, res);
-    });
+    // TODO: UNCOMMENT FOR DEV MONGODB STUFF 
+    //app.get('/graph/alpha', function(req, res) {
+        //var resp = factory.getGraph({name:'AlphaBetaGamma'}, res);
+    //});
 };

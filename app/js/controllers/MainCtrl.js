@@ -54,7 +54,7 @@ app.directive('pzGraphVis', function() {
             }
             var WIDTH = 1680;
             var HEIGHT = 800;
-            var MAX_NUMBER_OF_NODES = 20;
+            var MAX_NUMBER_OF_NODES = 40;
 
             // Calculate max weight for weightScale
             // TODO: update this since we're adding nodes now
@@ -68,31 +68,60 @@ app.directive('pzGraphVis', function() {
             // Map weights to pixel values with a scale
             var weightScale = d3.scale.linear()
                 .domain([0, maxWeight])
-                .range([70, 300]);
+                .range([200, 400]); // TODO: this should also depend on the number of nodes present (make both elements smaller)
 
             var nodeRadiusScale = d3.scale.linear()
                 .domain([1, MAX_NUMBER_OF_NODES])
-                .range([75, 10]);
+                .range([100, 15]);
 
-            var svg = d3.select(el[0]).append('svg'); // Append svg element
+            var svg = d3.select(el[0]).append('svg:svg')
+                .attr("width", WIDTH)
+                .attr("height", HEIGHT)
+                .attr("pointer-events", "all")
+                .append('svg:g')
+                .call(d3.behavior.zoom().on("zoom", redraw))
+                .append('svg:g');
 
-            svg.attr('width', WIDTH);
-            svg.attr('height', HEIGHT);
+            svg.append('svg:rect')
+                .attr('width', WIDTH)
+                .attr('height', HEIGHT)
+                .attr('fill', 'white');
+
+            function redraw() {
+            svg.attr("transform",
+                "translate(" + d3.event.translate + ")"
+                + " scale(" + d3.event.scale + ")");
+            }
+                        
+
+            //svg.attr('width', WIDTH);
+            //svg.attr('height', HEIGHT);
 
             var forceLayout = d3.layout.force()
                 .size([WIDTH, HEIGHT])
-                .charge([-1000]);
+                .charge([-2000]);
 
             forceLayout.nodes(dataset.nodes);
             forceLayout.links(dataset.edges);
             var forceNodes = forceLayout.nodes();
             var forceLinks = forceLayout.links();
 
-            function addNodeToIndex(i) {
-                forceNodes.push({name: 'LOL'});
-                forceLinks.push({source: forceNodes.length - 1, target: i, weight: Math.ceil(Math.random()*5)});
-                update();
+            function addNode(e) {
+                if (forceNodes.length < MAX_NUMBER_OF_NODES) { // No more nodes allowed
+                    var node = {name: '#' + forceNodes.length};
+                    var point = d3.mouse(e);
+                    node.x = point[0];
+                    node.y = point[1];
+
+                    forceNodes.push(node);
+                    forceLinks.push({source: forceNodes.length - 1, target: Math.floor(Math.random() * (forceNodes.length - 1)), weight: Math.ceil(Math.random()*10)});
+                    update();
+                }
             }
+
+            svg.on('click', function () {
+                addNode(this);
+            })
 
             function update() {
 
@@ -146,10 +175,9 @@ app.directive('pzGraphVis', function() {
                         update();
                     } else {
                         scope.alertClickedNode(d,i);
-                        addNodeToIndex(i);
                     }
                 });
-
+                
                 // TODO: figure out how to drag even on text; alternatively, use images or something else, e.g. position a transparent element immediately on top. Can also move nodeInnerLabels to be below the nodes by moving these lines immediately below to be above 'var nodes = ...', and making the fill 'transparent' for the nodes. However, this results in the links being seen through the nodes.
 
                 var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
@@ -188,10 +216,10 @@ app.directive('pzGraphVis', function() {
                         .attr("x2", function(d) { return d.target.x; })
                         .attr("y2", function(d) { return d.target.y; });
 
-                    //nodes.attr('cx', function(d) { return d.x; })
-                        //.attr('cy', function(d) { return d.y; });
+                    nodes.attr('cx', function(d) { return d.x; })
+                        .attr('cy', function(d) { return d.y; });
 
-                nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+                //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
                 
                     
                     nodeInnerLabels.attr('transform', function(d) {

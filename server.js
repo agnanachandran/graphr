@@ -1,31 +1,32 @@
 // modules
 var express = require('express');
 var app = express();
-var mongoose = require('mongoose');
-var db = require('./config/db');
 var port = process.env.PORT || 8080; // set to env. var if it exists, otherwise 8080
 
-var Schema = mongoose.Schema;
-var ObjectId = Schema.ObjectId;
-var Factory = require('./module.factory.js');
+// TODO: UNCOMMENT FOR DEV MONGODB STUFF
 
-// Database
+//var mongoose = require('mongoose');
+//var db = require('./config/db');
+//var Schema = mongoose.Schema;
+//var ObjectId = Schema.ObjectId;
+//var Factory = require('./module.factory.js');
+//// Database
 
-mongoose.connect(db.url); // connect to mongoDB database
-var db = mongoose.connection;
+//mongoose.connect(db.url); // connect to mongoDB database
+//var db = mongoose.connection;
 
+//db.on('error', function callback() {
+    //console.log('Connection error.');
+//});
 
-db.on('error', function callback() {
-    console.log('Connection error.');
-});
+//db.once('open', function callback() {
+    //console.log('Mongo working!');
+//});
 
-db.once('open', function callback() {
-    console.log('Mongo working!');
-});
-
-var factory = new Factory(Schema, mongoose);
-factory.createSchemas();
-factory.insertGraphs();
+var factory = null;
+//var factory = new Factory(Schema, mongoose);
+//factory.createSchemas();
+//factory.insertGraphs(); // Insert some dummy data
 
 app.configure(function() {
     app.use(express.static(__dirname + '/app')); // set the static files location
