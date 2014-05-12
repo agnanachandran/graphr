@@ -12,9 +12,6 @@
   -o-user-select: none;
   user-select: none; }
 
-body {
-  min-width: 1680px; }
-
 #bg-watermark {
   color: #aaaaaa;
   text-align: center;
@@ -34,11 +31,15 @@ body {
   height: 40px;
   width: 100%;
   padding-left: 1em;
+  padding-top: 5px;
   background-color: black;
   opacity: 0.8;
   color: #fcfcfc;
   bottom: 0;
   position: fixed; }
+
+.navbar {
+  margin-bottom: 0px; }
 
 svg g.nodelabelholder {
   cursor: pointer;

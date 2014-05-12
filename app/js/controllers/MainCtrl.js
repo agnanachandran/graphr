@@ -1,45 +1,36 @@
 var app = angular.module('MainCtrl', []);
-app.controller('MainController', function($scope) {
+app.controller('MainController', ['$scope', 'Graph', function($scope, graphService) {
     $scope.tagLine = 'Graph anything.';
-    $scope.dataset = {
-        nodes: [
-            { name: 'Alice'},
-            { name: 'Bob'},
-            { name: 'Candice'},
-            { name: 'Diane'},
-            { name: 'Erica'},
-            { name: 'Ford'},
-            { name: 'Gary'},
-            { name: 'Henry'}
-        ],
-        edges: [
-            { source: 0, target: 1, weight: 1},
-            { source: 0, target: 3, weight: 3},
-            { source: 0, target: 2, weight: 5},
-            { source: 4, target: 5, weight: 7},
-            { source: 5, target: 6, weight: 2},
-            { source: 2, target: 3, weight: 3}
-        ]
-    };
     $scope.freezeNodes = function(checkValue) {
         var datasetNodes = $scope.dataset.nodes;
         if (checkValue) {
+            $scope.areNodesFrozen = checkValue;
             for (var i = 0, len = datasetNodes.length; i < len; i++) {
                datasetNodes[i].fixed = true; 
             }
         } else {
+            $scope.areNodesFrozen = checkValue;
             for (var i = 0, len = datasetNodes.length; i < len; i++) {
                datasetNodes[i].fixed = false; 
             }
         }
     }
+    $scope.changeDataset = function(graph) {
+        $scope.dataset = graph;
+    }
 
     $scope.alertClickedNode = function(d, i) {
-        var datasetNodes = $scope.dataset.nodes;
-        //datasetNodes[i].name = 'LOL';
         $scope.selectedNode = i;
     }
-});
+
+    graphService.get('DefaultGraph').then(function(result) {
+        $scope.dataset = result.data[0];
+    });
+
+    graphService.getAll().then(function(result) {
+        $scope.graphList = result.data;
+    });
+}]);
 
 app.directive('pzGraphVis', function() {
     return {
@@ -48,20 +39,20 @@ app.directive('pzGraphVis', function() {
         scope: false,
         link: function(scope, el, attrs) {
             // Setup
-            var dataset = scope.dataset;
-            if (dataset) {
+            var graphList = scope.graphList;
+            if (scope.dataset) {
                 $("#tutorial-container").fadeOut("medium");
             }
-            var WIDTH = 1680;
-            var HEIGHT = 800;
+            var WIDTH = screen.width;
+            var HEIGHT = screen.height - 40; // Subtract 40 for footer height TODO: doesn't seem to be doing what I want though.
             var MAX_NUMBER_OF_NODES = 40;
 
             // Calculate max weight for weightScale
             // TODO: update this since we're adding nodes now
             var maxWeight = 1;
-            for (var i = 0, len = dataset.edges.length; i < len; i++) {
-                if (dataset.edges[i].weight > maxWeight) {
-                    maxWeight = dataset.edges[i].weight;
+            for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
+                if (scope.dataset.edges[i].weight > maxWeight) {
+                    maxWeight = scope.dataset.edges[i].weight;
                 }
             }
 
@@ -76,45 +67,38 @@ app.directive('pzGraphVis', function() {
 
             var svg = d3.select(el[0]).append('svg:svg')
                 .attr("width", WIDTH)
-                .attr("height", HEIGHT)
-                .attr("pointer-events", "all")
-                .append('svg:g')
-                .call(d3.behavior.zoom().on("zoom", redraw))
-                .append('svg:g');
+                .attr("height", HEIGHT);
+                //.attr("pointer-events", "all")
+                //.call(d3.behavior.zoom().on("zoom", redraw))
+                //.append('svg:g');
 
-            svg.append('svg:rect')
-                .attr('width', WIDTH)
-                .attr('height', HEIGHT)
-                .attr('fill', 'white');
+            //svg.append('svg:rect')
+                //.attr('fill', 'white');
 
             function redraw() {
-            svg.attr("transform",
-                "translate(" + d3.event.translate + ")"
-                + " scale(" + d3.event.scale + ")");
+                svg.attr("transform",
+                    "translate(" + d3.event.translate + ")"
+                    + " scale(" + d3.event.scale + ")");
             }
-                        
-
-            //svg.attr('width', WIDTH);
-            //svg.attr('height', HEIGHT);
 
             var forceLayout = d3.layout.force()
                 .size([WIDTH, HEIGHT])
                 .charge([-2000]);
 
-            forceLayout.nodes(dataset.nodes);
-            forceLayout.links(dataset.edges);
+            forceLayout.nodes(scope.dataset.nodes);
+            forceLayout.links(scope.dataset.edges);
             var forceNodes = forceLayout.nodes();
             var forceLinks = forceLayout.links();
 
             function addNode(e) {
                 if (forceNodes.length < MAX_NUMBER_OF_NODES) { // No more nodes allowed
-                    var node = {name: '#' + forceNodes.length};
+                    var node = {name: '#' + forceNodes.length, fixed: scope.areNodesFrozen};
                     var point = d3.mouse(e);
                     node.x = point[0];
                     node.y = point[1];
 
                     forceNodes.push(node);
-                    forceLinks.push({source: forceNodes.length - 1, target: Math.floor(Math.random() * (forceNodes.length - 1)), weight: Math.ceil(Math.random()*10)});
+                    //forceLinks.push({source: forceNodes.length - 1, target: Math.floor(Math.random() * (forceNodes.length - 1)), weight: Math.ceil(Math.random()*10)});
                     update();
                 }
             }
@@ -124,7 +108,6 @@ app.directive('pzGraphVis', function() {
             })
 
             function update() {
-
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
                 var edges = svg.selectAll('line')
                     .data(forceLinks);
@@ -211,6 +194,12 @@ app.directive('pzGraphVis', function() {
 
                 forceLayout.start();
                 forceLayout.on('tick', function() {
+                    // TODO: move these to somewhere where they'll be called on option change
+                    forceLayout.nodes(scope.dataset.nodes);
+                    forceLayout.links(scope.dataset.edges);
+                    forceNodes = forceLayout.nodes();
+                    forceLinks = forceLayout.links();
+
                     edges.attr('x1', function(d) { return d.source.x; })
                         .attr("y1", function(d) { return d.source.y; })
                         .attr("x2", function(d) { return d.target.x; })

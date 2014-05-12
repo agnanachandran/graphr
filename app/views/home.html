@@ -4,14 +4,21 @@
     <p>{{ tagLine }}</p>
 </div>
 <pz-graph-vis>
-    
+
 </pz-graph-vis>
 
 <div id="footer-container">
-    <div class="checkbox">
-        <label>
-            <input type="checkbox" ng-model="frozen" ng-change=freezeNodes(frozen)> Freeze Nodes
-        </label>
+    <div class="row">
+        <div class="checkbox col-md-4">
+            <label>
+                <input type="checkbox" ng-model="frozen" ng-change=freezeNodes(frozen)> Freeze Nodes
+            </label>
+        </div>
+        <div class="col-md-4">
+            <select class="form-control" ng-model="graph" ng-change=changeDataset(graph) ng-options="graph.name for graph in graphList">
+                <option value="">Choose graph</option>
+            </select>
+        </div>
     </div>
 </div>
 
