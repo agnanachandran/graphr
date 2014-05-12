@@ -16,7 +16,9 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
         }
     }
     $scope.changeDataset = function(graph) {
-        $scope.dataset = graph;
+        if (graph) {
+            $scope.dataset = graph;
+        }
     }
 
     $scope.alertClickedNode = function(d, i) {
@@ -144,6 +146,11 @@ app.directive('pzGraphVis', function() {
                 nodes.exit().remove();
 
                 nodes.on('click', function(d,i) {
+                    // TODO: move these to somewhere where they'll be called on option change
+                    forceLayout.nodes(scope.dataset.nodes);
+                    forceLayout.links(scope.dataset.edges);
+                    forceNodes = forceLayout.nodes();
+                    forceLinks = forceLayout.links();
                     if (d3.event.shiftKey) {
                         forceNodes.splice(i, 1);
                         var j = 0;
@@ -194,12 +201,6 @@ app.directive('pzGraphVis', function() {
 
                 forceLayout.start();
                 forceLayout.on('tick', function() {
-                    // TODO: move these to somewhere where they'll be called on option change
-                    forceLayout.nodes(scope.dataset.nodes);
-                    forceLayout.links(scope.dataset.edges);
-                    forceNodes = forceLayout.nodes();
-                    forceLinks = forceLayout.links();
-
                     edges.attr('x1', function(d) { return d.source.x; })
                         .attr("y1", function(d) { return d.source.y; })
                         .attr("x2", function(d) { return d.target.x; })
