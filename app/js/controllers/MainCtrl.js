@@ -12,12 +12,20 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
     $scope.changeDataset = function(graph) {
         if (graph) {
             $scope.dataset = graph;
+            $scope.update();
         }
-    }
+    };
+
+    $scope.saveDataset = function() {
+        graphService.create($scope.dataset).then(function(result) {
+            // Successfully saved? Check result?
+            alert('YAY IT SAVED.' + result);
+        });
+    };
 
     $scope.alertClickedNode = function(d, i) {
         $scope.selectedNode = i;
-    }
+    };
 
     graphService.get('DefaultGraph').then(function(result) {
         $scope.dataset = result.data[0];
@@ -36,6 +44,7 @@ app.directive('pzGraphVis', function() {
         scope: false,
         link: function(scope, el, attrs) {
             // Setup
+            // TODO: only run this after graph has been retrieved. Can perhaps be done by wrapping everything here in a function and assigning it to scope.run, and calling it in the callback above.
             var graphList = scope.graphList;
             if (scope.dataset) {
                 $("#tutorial-container").fadeOut("medium");
@@ -234,6 +243,8 @@ app.directive('pzGraphVis', function() {
             }
 
             update();
+            scope.update = update;
+            //scope.forceLayout = forceLayout;
 
         }
     };

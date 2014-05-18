@@ -51,6 +51,27 @@ var Factory = function(Schema, mongoose) {
         });
     };
 
+    this.createGraph = function(graphData, res) {
+        var graph = {};
+        graph.name = "JOJO" + graphData.nodes.length;
+        graph.nodes = [];
+        graph.edges = [ 
+            { source: 0, target: 1, weight: 1}
+        ];
+        for (var i = 0, len = graphData.nodes.length; i < len; i++) {
+            graph.nodes.push({name: graphData.nodes[i].name});
+        }
+        //for (var i = 0, len = graphData.edges; i < len; i++) {
+            //var edge = graphData.edges[i];
+            //// TODO: currently source and target are objects..?
+            ////graph.edges.push(edge.)
+        //}
+        var newGraph = new this.Graph(
+            graph
+        );
+        newGraph.save();
+    };
+
 }
 
 module.exports = Factory;

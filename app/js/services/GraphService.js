@@ -7,11 +7,11 @@ angular.module('GraphService', []).factory('Graph', ['$http', function($http) {
         },
 
         getAll: function() {
-            return $http.get('http://localhost:8080/graphs/')
+            return $http.get('http://localhost:8080/graphs/');
         },
 
         create: function(graphData) {
-            return $http.post('/graphs', graphData);
+            return $http.post('http://localhost:8080/graphs/', graphData);
         }
 
         //delete: function(id) {
