@@ -2,19 +2,13 @@ var app = angular.module('MainCtrl', []);
 app.controller('MainController', ['$scope', 'Graph', function($scope, graphService) {
     $scope.tagLine = 'Graph anything.';
     $scope.freezeNodes = function(checkValue) {
+        $scope.areNodesFrozen = checkValue;
         var datasetNodes = $scope.dataset.nodes;
-        if (checkValue) {
-            $scope.areNodesFrozen = checkValue;
-            for (var i = 0, len = datasetNodes.length; i < len; i++) {
-               datasetNodes[i].fixed = true; 
-            }
-        } else {
-            $scope.areNodesFrozen = checkValue;
-            for (var i = 0, len = datasetNodes.length; i < len; i++) {
-               datasetNodes[i].fixed = false; 
-            }
+        for (var i = 0, len = datasetNodes.length; i < len; i++) {
+            datasetNodes[i].fixed = checkValue; 
         }
     }
+
     $scope.changeDataset = function(graph) {
         if (graph) {
             $scope.dataset = graph;
@@ -32,6 +26,7 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
     graphService.getAll().then(function(result) {
         $scope.graphList = result.data;
     });
+
 }]);
 
 app.directive('pzGraphVis', function() {
@@ -45,9 +40,18 @@ app.directive('pzGraphVis', function() {
             if (scope.dataset) {
                 $("#tutorial-container").fadeOut("medium");
             }
-            var WIDTH = screen.width;
-            var HEIGHT = screen.height - 40; // Subtract 40 for footer height TODO: doesn't seem to be doing what I want though.
-            var MAX_NUMBER_OF_NODES = 40;
+
+            function calculateWidth() {
+                return window.innerWidth || e.clientWidth || g.clientWidth;
+            }
+
+            function calculateHeight() {
+                return (window.innerHeight|| e.clientHeight|| g.clientHeight) - $('#footer-container').height() - $('nav').height() - 15;
+            }
+
+            var WIDTH = calculateWidth();
+            var HEIGHT = calculateHeight();
+            var MAX_NUMBER_OF_NODES = 60;
 
             // Calculate max weight for weightScale
             // TODO: update this since we're adding nodes now
@@ -70,38 +74,43 @@ app.directive('pzGraphVis', function() {
             var svg = d3.select(el[0]).append('svg:svg')
                 .attr("width", WIDTH)
                 .attr("height", HEIGHT);
+                // Commented out zooming behaviour
                 //.attr("pointer-events", "all")
                 //.call(d3.behavior.zoom().on("zoom", redraw))
                 //.append('svg:g');
 
-            //svg.append('svg:rect')
-                //.attr('fill', 'white');
-
-            function redraw() {
-                svg.attr("transform",
-                    "translate(" + d3.event.translate + ")"
-                    + " scale(" + d3.event.scale + ")");
+            function updateWindow(){
+                WIDTH = calculateWidth();
+                HEIGHT = calculateHeight();
+                svg.attr("width", WIDTH).attr("height", HEIGHT);
+                forceLayout.size([WIDTH, HEIGHT]);
             }
+
+            window.onresize = updateWindow;
+
+            //function redraw() {
+                //svg.attr("transform",
+                    //"translate(" + d3.event.translate + ")"
+                    //+ " scale(" + d3.event.scale + ")");
+            //}
 
             var forceLayout = d3.layout.force()
                 .size([WIDTH, HEIGHT])
-                .charge([-2000]);
-
-            forceLayout.nodes(scope.dataset.nodes);
-            forceLayout.links(scope.dataset.edges);
-            var forceNodes = forceLayout.nodes();
-            var forceLinks = forceLayout.links();
+                .charge([-2000])
+                .nodes(scope.dataset.nodes)
+                .links(scope.dataset.edges);
 
             function addNode(e) {
-                if (forceNodes.length < MAX_NUMBER_OF_NODES) { // No more nodes allowed
-                    var node = {name: '#' + forceNodes.length, fixed: scope.areNodesFrozen};
+                if (scope.dataset.nodes.length < MAX_NUMBER_OF_NODES) { // No more nodes allowed
+                    var node = {name: '#' + scope.dataset.nodes.length, fixed: scope.areNodesFrozen};
                     var point = d3.mouse(e);
                     node.x = point[0];
                     node.y = point[1];
 
-                    forceNodes.push(node);
-                    //forceLinks.push({source: forceNodes.length - 1, target: Math.floor(Math.random() * (forceNodes.length - 1)), weight: Math.ceil(Math.random()*10)});
+                    scope.dataset.nodes.push(node);
                     update();
+
+                    //scope.dataset.edges.push({source: scope.dataset.nodes.length - 1, target: Math.floor(Math.random() * (scope.dataset.nodes.length - 1)), weight: Math.ceil(Math.random()*10)});
                 }
             }
 
@@ -111,8 +120,10 @@ app.directive('pzGraphVis', function() {
 
             function update() {
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
+                forceLayout.nodes(scope.dataset.nodes).links(scope.dataset.edges);
                 var edges = svg.selectAll('line')
-                    .data(forceLinks);
+                    .data(forceLayout.links());
+
                 edges.enter()
                     .append('line')
                     .attr('class', 'link');
@@ -124,10 +135,11 @@ app.directive('pzGraphVis', function() {
                 edges.exit().remove();
 
                 var nodes = svg.selectAll('circle')
-                    .data(forceNodes);
+                    .data(forceLayout.nodes());
                 nodes.enter()
                     .append('circle')
                     .call(forceLayout.drag);
+
                 nodes
                     .attr('class', 'node')
                     .attr('id', function(d, i) {
@@ -140,29 +152,23 @@ app.directive('pzGraphVis', function() {
                     })
                     .transition().duration(1500).ease('elastic')
                     .attr('r', function(d, i) {
-                        return nodeRadiusScale(forceNodes.length);
+                        return nodeRadiusScale(scope.dataset.nodes.length);
                     });
 
                 nodes.exit().remove();
 
                 nodes.on('click', function(d,i) {
                     // TODO: move these to somewhere where they'll be called on option change
-                    forceLayout.nodes(scope.dataset.nodes);
-                    forceLayout.links(scope.dataset.edges);
-                    forceNodes = forceLayout.nodes();
-                    forceLinks = forceLayout.links();
                     if (d3.event.shiftKey) {
-                        forceNodes.splice(i, 1);
+                        scope.dataset.nodes.splice(i, 1);
                         var j = 0;
-                        while (j < forceLinks.length) {
-                            if (forceLinks[j].source.index === i || forceLinks[j].target.index === i) {
-                                forceLinks.splice(j, 1);
+                        while (j < scope.dataset.edges.length) {
+                            if (scope.dataset.edges[j].source.index === i || scope.dataset.edges[j].target.index === i) {
+                                scope.dataset.edges.splice(j, 1);
                             } else {
                                 j++;
                             }
                         }
-                        //console.log(forceLinks);
-                        update();
                     } else {
                         scope.alertClickedNode(d,i);
                     }
@@ -171,9 +177,8 @@ app.directive('pzGraphVis', function() {
                 // TODO: figure out how to drag even on text; alternatively, use images or something else, e.g. position a transparent element immediately on top. Can also move nodeInnerLabels to be below the nodes by moving these lines immediately below to be above 'var nodes = ...', and making the fill 'transparent' for the nodes. However, this results in the links being seen through the nodes.
 
                 var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
-                    .data(forceNodes);
+                    .data(forceLayout.nodes());
                 nodeInnerLabels.call(forceLayout.drag);
-                nodeInnerLabels.exit().remove(); // TODO: make it fade out nicely?
                 nodeInnerLabels
                     .enter()
                     .append('g')
@@ -183,9 +188,11 @@ app.directive('pzGraphVis', function() {
                     .attr('text-anchor', 'middle')
                     .attr("dy", ".35em")
                     .text(function(d, i) { return d.name; });
+                nodeInnerLabels.exit().remove(); // TODO: make it fade out nicely?
                 // TODO: make nodeText and linkText scales. Also transition().
 
-                var linkText = svg.selectAll("g.linklabelholder").data(forceLinks);
+                var linkText = svg.selectAll("g.linklabelholder")
+                    .data(forceLayout.links());
                 linkText.enter().append("g").attr("class", "linklabelholder")
                     .append("text")
                     .attr("class", "linklabel")
@@ -206,12 +213,14 @@ app.directive('pzGraphVis', function() {
                         .attr("x2", function(d) { return d.target.x; })
                         .attr("y2", function(d) { return d.target.y; });
 
-                    nodes.attr('cx', function(d) { return d.x; })
-                        .attr('cy', function(d) { return d.y; });
+                    var r = nodeRadiusScale(scope.dataset.nodes.length);
+                    nodes.attr("cx", function(d) {
+                        return d.x = Math.max(r, Math.min(WIDTH - r, d.x));
+                    })
+                    .attr("cy", function(d) {
+                        return d.y = Math.max(r, Math.min(HEIGHT - r, d.y));
+                    });
 
-                //nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
-                
-                    
                     nodeInnerLabels.attr('transform', function(d) {
                         return "translate(" + d.x + "," + d.y + ")";
                     });

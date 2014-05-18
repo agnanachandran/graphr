@@ -28,18 +28,21 @@
   height: 100%; }
 
 #footer-container {
-  height: 40px;
+  overflow-x: hidden;
   width: 100%;
-  padding-left: 1em;
-  padding-top: 5px;
+  padding-left: 10px;
+  padding-top: 10px;
   background-color: black;
   opacity: 0.8;
-  color: #fcfcfc;
-  bottom: 0;
-  position: fixed; }
+  color: #fcfcfc; }
 
 .navbar {
   margin-bottom: 0px; }
+
+.checkbox {
+  margin-left: 20px;
+  margin-bottom: 20px;
+  margin-top: 10px; }
 
 svg g.nodelabelholder {
   cursor: pointer;
