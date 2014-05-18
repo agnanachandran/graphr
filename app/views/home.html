@@ -1,6 +1,6 @@
 <div id="tutorial-container">
     <div id="bg-watermark">graphr</div>
-    <div id="tutorial">Click anywhere to create a node</div>
+    <div id="tutorial">Click to create a node. Shift-click to delete.<br>Double-click two nodes to connect them.</div>
     <p>{{ tagLine }}</p>
 </div>
 <pz-graph-vis>
@@ -9,19 +9,28 @@
 
 <div id="footer-container">
     <div class="row">
-        <div class="checkbox col-md-4">
-            <label>
+        <div class="checkbox col-md-1">
+            <label id="freeze-nodes">
                 <input type="checkbox" ng-model="frozen" ng-change=freezeNodes(frozen)> Freeze Nodes
             </label>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-2">
+            <label>
+                <input id="edgeInput" type="number" min="0" max="100" value="0" step="1" ng-model="value" ng-change=updateNodeOrEdge(value)> Update Node
+            </label>
+        </div>
+        <div class="col-md-2">
             <select class="form-control" ng-model="graph" ng-change=changeDataset(graph) ng-options="graph.name for graph in graphList">
                 <option value="">Choose graph</option>
             </select>
         </div>
-        <div class="col-md-4">
-            <button type="button" ng-click="saveDataset()" class="btn btn-default">Save</button>
+        <div class="col-md-2">
+            <select class="form-control" ng-model="algorithm" ng-change="changeAlgorithm(algorithm)" ng-options="algo.name for algo in algorithms">
+                <option value="">Choose algorithm</option>
+            </select>
         </div>
+        <button type="button" ng-click="runAlgorithm()" class="btn btn-primary col-md-1 col-md-offset-1">Run</button>
+        <button type="button" ng-click="saveDataset()" class="btn btn-success col-md-1 col-md-offset-1">Save</button>
     </div>
 </div>
 

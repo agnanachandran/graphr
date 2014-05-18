@@ -1,17 +1,41 @@
 var app = angular.module('MainCtrl', []);
 app.controller('MainController', ['$scope', 'Graph', function($scope, graphService) {
     $scope.tagLine = 'Graph anything.';
-    $scope.freezeNodes = function(checkValue) {
-        $scope.areNodesFrozen = checkValue;
+
+    $scope.resetClicks = function() {
+        $scope.selectedNode = -1;
+        $scope.doubleClickedNode = -1;
+    }
+
+    $scope.updateFrozenNodes = function() {
         var datasetNodes = $scope.dataset.nodes;
         for (var i = 0, len = datasetNodes.length; i < len; i++) {
-            datasetNodes[i].fixed = checkValue; 
+            datasetNodes[i].fixed = $scope.areNodesFrozen; 
         }
+    }
+
+    $scope.freezeNodes = function(checkValue) {
+        $scope.areNodesFrozen = checkValue;
+        $scope.updateFrozenNodes();
+    }
+
+    $scope.connectNodes = function(n1, n2) {
+        $scope.resetClicks();
+        for (var i = 0, len = $scope.dataset.edges.length; i < len; i++) {
+            var edge = $scope.dataset.edges[i];
+            if (edge.source === n1 && edge.target === n2 || edge.target === n1 && edge.source === n2) {
+                return;
+            }
+        }
+        $scope.dataset.edges.push({source: n1, target: n2, weight: 1});
+        $scope.update();
     }
 
     $scope.changeDataset = function(graph) {
         if (graph) {
             $scope.dataset = graph;
+            $scope.selectedNode = -1;
+            $scope.updateFrozenNodes();
             $scope.update();
         }
     };
@@ -19,21 +43,45 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
     $scope.saveDataset = function() {
         graphService.create($scope.dataset).then(function(result) {
             // Successfully saved? Check result?
-            alert('YAY IT SAVED.' + result);
+            console.log('YAY IT SAVED.' + result);
         });
     };
 
     $scope.alertClickedNode = function(d, i) {
+        if ($scope.selectedNode === i) {
+            if ($scope.doubleClickedNode >= 0) {
+                if ($scope.doubleClickedNode != $scope.selectedNode) { // Prevent self-loops.
+                    $scope.connectNodes($scope.doubleClickedNode, $scope.selectedNode);
+                }
+            } else {
+                $scope.doubleClickedNode = i;
+            }
+        }
         $scope.selectedNode = i;
+        $scope.update();
     };
 
-    graphService.get('DefaultGraph').then(function(result) {
-        $scope.dataset = result.data[0];
-    });
+    $scope.dataset = {
+        name: "",
+        nodes: [],
+        edges: []
+    };
+    //graphService.get('DefaultGraph').then(function(result) {
+        //$scope.dataset = result.data[0];
+    //});
 
     graphService.getAll().then(function(result) {
         $scope.graphList = result.data;
     });
+
+    $scope.algorithms = [
+        {name: "Breadth-first Search"},
+        {name: "Depth-first Search"},
+        {name: "Dijkstra's Algorithm"},
+        {name: "A* Search"},
+    ];
+
+    $scope.resetClicks();
 
 }]);
 
@@ -46,9 +94,6 @@ app.directive('pzGraphVis', function() {
             // Setup
             // TODO: only run this after graph has been retrieved. Can perhaps be done by wrapping everything here in a function and assigning it to scope.run, and calling it in the callback above.
             var graphList = scope.graphList;
-            if (scope.dataset) {
-                $("#tutorial-container").fadeOut("medium");
-            }
 
             function calculateWidth() {
                 return window.innerWidth || e.clientWidth || g.clientWidth;
@@ -130,6 +175,10 @@ app.directive('pzGraphVis', function() {
             function update() {
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
                 forceLayout.nodes(scope.dataset.nodes).links(scope.dataset.edges);
+                if (scope.dataset.nodes.length) {
+                    $("#tutorial-container").fadeOut("medium");
+                }
+
                 var edges = svg.selectAll('line')
                     .data(forceLayout.links());
 
@@ -166,7 +215,7 @@ app.directive('pzGraphVis', function() {
 
                 nodes.exit().remove();
 
-                nodes.on('click', function(d,i) {
+                function nodeClick(d, i) {
                     // TODO: move these to somewhere where they'll be called on option change
                     if (d3.event.shiftKey) {
                         scope.dataset.nodes.splice(i, 1);
@@ -178,12 +227,16 @@ app.directive('pzGraphVis', function() {
                                 j++;
                             }
                         }
+                        update();
                     } else {
                         scope.alertClickedNode(d,i);
                     }
+                    d3.event.stopPropagation();
+                }
+
+                nodes.on('click', function(d,i) {
+                    nodeClick(d, i);
                 });
-                
-                // TODO: figure out how to drag even on text; alternatively, use images or something else, e.g. position a transparent element immediately on top. Can also move nodeInnerLabels to be below the nodes by moving these lines immediately below to be above 'var nodes = ...', and making the fill 'transparent' for the nodes. However, this results in the links being seen through the nodes.
 
                 var nodeInnerLabels = svg.selectAll('g.nodelabelholder')
                     .data(forceLayout.nodes());
@@ -196,7 +249,10 @@ app.directive('pzGraphVis', function() {
                     .attr('class','nodelabel')
                     .attr('text-anchor', 'middle')
                     .attr("dy", ".35em")
-                    .text(function(d, i) { return d.name; });
+                    .text(function(d, i) { return d.name; })
+                    .on('click', function(d, i) {
+                        nodeClick(d, i);
+                    });
                 nodeInnerLabels.exit().remove(); // TODO: make it fade out nicely?
                 // TODO: make nodeText and linkText scales. Also transition().
 
@@ -208,7 +264,24 @@ app.directive('pzGraphVis', function() {
                     .attr("dx", 1)
                     .attr("dy", ".35em")
                     .attr("text-anchor", "middle")
-                    .text(function(d) { return d.weight; });
+                    .style("font-size", "20px")
+                    .on('click', function(d, i) {
+                        d3.event.stopPropagation();
+                        //alert(i);
+                        //scope.dataset.edges[i].weight = 3;
+                        d.weight *= 2;
+                        update();
+                    })
+                    .text(function(d) { 
+                        return d.weight; 
+                    })
+                    .attr('id', function(d, i) {
+                        return "link_text_" + i;
+                    });
+                    for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
+                        var edge = scope.dataset.edges[i];
+                        d3.select('text#link_text_' + i).text(edge.weight);
+                    }
                 linkText.exit().remove();
 
                 forceLayout.linkDistance(function(d, i) {

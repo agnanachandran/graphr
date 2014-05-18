@@ -30,7 +30,6 @@
 #footer-container {
   overflow-x: hidden;
   width: 100%;
-  padding-left: 10px;
   padding-top: 10px;
   background-color: black;
   opacity: 0.8;
@@ -44,6 +43,12 @@
   margin-bottom: 20px;
   margin-top: 10px; }
 
+#edgeInput {
+  color: black; }
+
+#freeze-nodes {
+  font-size: 16px; }
+
 svg g.nodelabelholder {
   cursor: pointer;
   -webkit-user-select: none;
@@ -54,4 +59,7 @@ svg g.nodelabelholder {
   user-select: none; }
 
 svg circle {
+  cursor: pointer; }
+
+svg text {
   cursor: pointer; }
