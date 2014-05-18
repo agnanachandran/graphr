@@ -23,7 +23,7 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
         $scope.resetClicks();
         for (var i = 0, len = $scope.dataset.edges.length; i < len; i++) {
             var edge = $scope.dataset.edges[i];
-            if (edge.source === n1 && edge.target === n2 || edge.target === n1 && edge.source === n2) {
+            if (edge.source.index === n1 && edge.target.index === n2 || edge.target.index === n1 && edge.source.index === n2) {
                 return;
             }
         }
@@ -209,7 +209,7 @@ app.directive('pzGraphVis', function() {
                         return i === scope.selectedNode ? 2 : 1;
                     })
                     .transition().duration(1500).ease('elastic')
-                    .attr('r', function(d, i) {
+                    .attr('r', function() {
                         return nodeRadiusScale(scope.dataset.nodes.length);
                     });
 
