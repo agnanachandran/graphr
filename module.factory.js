@@ -53,7 +53,7 @@ var Factory = function(Schema, mongoose) {
 
     this.createGraph = function(graphData, res) {
         var graph = {};
-        graph.name = "New graph" + graphData.nodes.length;
+        graph.name = graphData.name;
         graph.nodes = [];
         graph.edges = [];
         for (var i = 0, len = graphData.nodes.length; i < len; i++) {
@@ -75,7 +75,7 @@ var Factory = function(Schema, mongoose) {
         );
         newGraph.save(function (err) {
             if (!err) {
-                console.log("updated");
+                console.log("it worked");
             } else {
                 console.log(err);
             }

@@ -49,10 +49,29 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
         }
     };
 
-    $scope.saveDataset = function() {
-        graphService.create(this.dataset).then(function(result) {
+    $scope.saveDataset = function(graphName) {
+        // TODO: figure out more robust solution for saving and updating graphs.
+        var newDataset = {
+            name: "",
+            nodes: [],
+            edges: []
+        };
+        newDataset.name = graphName + ": " + new Date();
+        newDataset.nodes = this.dataset.nodes;
+        newDataset.edges = this.dataset.edges;
+
+        graphService.create(newDataset).then(function(result) {
             // Successfully saved? Check result?
-            console.log('YAY IT SAVED.' + result);
+            if (result) {
+                var $saveGraph = $('#save-graph');
+                $saveGraph.html('Saved!');
+                $saveGraph.attr('disabled', 'disabled');
+
+                window.setTimeout(function () {
+                    $saveGraph.html('Save');
+                    $saveGraph.removeAttr('disabled');
+                }, 1000);
+            }
         });
     };
 
@@ -116,7 +135,7 @@ app.directive('pzGraphVis', function() {
             }
 
             function calculateHeight() {
-                return (window.innerHeight|| e.clientHeight|| g.clientHeight) - $('#footer-container').height() - $('nav').height() - 15;
+                return (window.innerHeight|| e.clientHeight|| g.clientHeight) - $('#footer-container').height() - $('nav').height() - 25;
             }
 
             var WIDTH = calculateWidth();
@@ -234,9 +253,17 @@ app.directive('pzGraphVis', function() {
 
                 var nodes = svg.selectAll('circle')
                     .data(forceLayout.nodes());
-                nodes.enter()
+
+                var enteredNodes = nodes.enter()
                     .append('circle')
                     .call(forceLayout.drag);
+
+                enteredNodes
+                    .attr('r', 0)
+                    .transition().duration(100).ease('easein')
+                    .attr('r', function() {
+                        return nodeRadiusScale(scope.dataset.nodes.length);
+                    });
 
                 nodes
                     .attr('class', 'node')
@@ -245,15 +272,15 @@ app.directive('pzGraphVis', function() {
                     })
                     .style('fill', '#fefefe')
                     .style('stroke', '#111')
+                    .transition().duration(300).ease('easein')
                     .style('stroke-width', function(d, i) {
                         return i === scope.selectedNode ? 2 : 1;
                     })
-                    .transition().duration(1500).ease('elastic')
                     .attr('r', function() {
                         return nodeRadiusScale(scope.dataset.nodes.length);
                     });
 
-                nodes.exit().remove();
+                nodes.exit().remove()
                 // TODO: add transition
 
                 function nodeClick(d, i) {
