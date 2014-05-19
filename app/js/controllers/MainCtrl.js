@@ -3,63 +3,79 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
     $scope.tagLine = 'Graph anything.';
 
     $scope.resetClicks = function() {
-        $scope.selectedNode = -1;
-        $scope.doubleClickedNode = -1;
+        this.selectedNode = -1;
+        this.doubleClickedNode = -1;
     }
 
     $scope.updateFrozenNodes = function() {
-        var datasetNodes = $scope.dataset.nodes;
+        var datasetNodes = this.dataset.nodes;
         for (var i = 0, len = datasetNodes.length; i < len; i++) {
-            datasetNodes[i].fixed = $scope.areNodesFrozen; 
+            datasetNodes[i].fixed = this.areNodesFrozen; 
+        }
+    }
+
+    $scope.updateNodeOrEdge = function(value) {
+        if (this.selectedEdge >= 0 && !isNaN(value) && value < 9999) {
+            this.calculateScalesWithNewWeight(value);
+            this.dataset.edges[this.selectedEdge].weight = value;
+            this.update();
         }
     }
 
     $scope.freezeNodes = function(checkValue) {
-        $scope.areNodesFrozen = checkValue;
-        $scope.updateFrozenNodes();
+        this.areNodesFrozen = checkValue;
+        this.updateFrozenNodes();
     }
 
     $scope.connectNodes = function(n1, n2) {
-        $scope.resetClicks();
-        for (var i = 0, len = $scope.dataset.edges.length; i < len; i++) {
-            var edge = $scope.dataset.edges[i];
+        this.resetClicks();
+        for (var i = 0, len = this.dataset.edges.length; i < len; i++) {
+            var edge = this.dataset.edges[i];
             if (edge.source.index === n1 && edge.target.index === n2 || edge.target.index === n1 && edge.source.index === n2) {
                 return;
             }
         }
-        $scope.dataset.edges.push({source: n1, target: n2, weight: 1});
-        $scope.update();
+        this.dataset.edges.push({source: n1, target: n2, weight: 1});
+        this.update();
     }
 
     $scope.changeDataset = function(graph) {
         if (graph) {
-            $scope.dataset = graph;
-            $scope.selectedNode = -1;
-            $scope.updateFrozenNodes();
-            $scope.update();
+            this.dataset = graph;
+            this.resetClicks();
+            this.selectedEdge = -1;
+            this.updateFrozenNodes();
+            this.update();
         }
     };
 
     $scope.saveDataset = function() {
-        graphService.create($scope.dataset).then(function(result) {
+        graphService.create(this.dataset).then(function(result) {
             // Successfully saved? Check result?
             console.log('YAY IT SAVED.' + result);
         });
     };
 
     $scope.alertClickedNode = function(d, i) {
-        if ($scope.selectedNode === i) {
-            if ($scope.doubleClickedNode >= 0) {
-                if ($scope.doubleClickedNode != $scope.selectedNode) { // Prevent self-loops.
-                    $scope.connectNodes($scope.doubleClickedNode, $scope.selectedNode);
+        if (this.selectedNode === i) {
+            if (this.doubleClickedNode >= 0) {
+                if (this.doubleClickedNode != this.selectedNode) { // Prevent self-loops.
+                    this.connectNodes(this.doubleClickedNode, this.selectedNode);
                 }
             } else {
-                $scope.doubleClickedNode = i;
+                this.doubleClickedNode = i;
             }
         }
-        $scope.selectedNode = i;
-        $scope.update();
+        this.selectedNode = i;
+        this.update();
     };
+
+    $scope.alertClickedEdge = function(d, i) {
+        this.edgeValue = this.dataset.edges[i].weight;
+        var input = $('#edgeInput');
+        input.val(this.edgeValue);
+        this.selectedEdge = i;
+    }
 
     $scope.dataset = {
         name: "",
@@ -107,19 +123,42 @@ app.directive('pzGraphVis', function() {
             var HEIGHT = calculateHeight();
             var MAX_NUMBER_OF_NODES = 60;
 
-            // Calculate max weight for weightScale
-            // TODO: update this since we're adding nodes now
-            var maxWeight = 1;
-            for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
-                if (scope.dataset.edges[i].weight > maxWeight) {
-                    maxWeight = scope.dataset.edges[i].weight;
+            function calculateMaxWeight() {
+                var max = 1;
+                for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
+                    if (scope.dataset.edges[i].weight > max) {
+                        max = scope.dataset.edges[i].weight;
+                    }
                 }
+                return max;
             }
 
-            // Map weights to pixel values with a scale
-            var weightScale = d3.scale.linear()
-                .domain([0, maxWeight])
-                .range([200, 400]); // TODO: this should also depend on the number of nodes present (make both elements smaller)
+            var maxWeight;
+            var weightScale;
+            var counterForNewNode = 0;
+
+            var calculateScalesWithNewWeight = function (newWeight) {
+                if (newWeight > maxWeight) {
+                    maxWeight = newWeight;
+                }
+
+                weightScale = d3.scale.linear()
+                    .domain([0, maxWeight])
+                    .range([250, 400]); // TODO: this should also depend on the number of nodes present (make both elements smaller)
+            };
+
+            function calculateScales() {
+                maxWeight = calculateMaxWeight();
+
+                // Map weights to pixel values with a scale
+                weightScale = d3.scale.linear()
+                    .domain([0, maxWeight])
+                    .range([250, 400]); // TODO: this should also depend on the number of nodes present (make both elements smaller)
+            }
+
+            scope.calculateScalesWithNewWeight = calculateScalesWithNewWeight;
+            
+            calculateScales();
 
             var nodeRadiusScale = d3.scale.linear()
                 .domain([1, MAX_NUMBER_OF_NODES])
@@ -156,7 +195,7 @@ app.directive('pzGraphVis', function() {
 
             function addNode(e) {
                 if (scope.dataset.nodes.length < MAX_NUMBER_OF_NODES) { // No more nodes allowed
-                    var node = {name: '#' + scope.dataset.nodes.length, fixed: scope.areNodesFrozen};
+                    var node = {name: '#' + counterForNewNode++, fixed: scope.areNodesFrozen};
                     var point = d3.mouse(e);
                     node.x = point[0];
                     node.y = point[1];
@@ -173,6 +212,7 @@ app.directive('pzGraphVis', function() {
             })
 
             function update() {
+
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
                 forceLayout.nodes(scope.dataset.nodes).links(scope.dataset.edges);
                 if (scope.dataset.nodes.length) {
@@ -214,9 +254,9 @@ app.directive('pzGraphVis', function() {
                     });
 
                 nodes.exit().remove();
+                // TODO: add transition
 
                 function nodeClick(d, i) {
-                    // TODO: move these to somewhere where they'll be called on option change
                     if (d3.event.shiftKey) {
                         scope.dataset.nodes.splice(i, 1);
                         var j = 0;
@@ -227,6 +267,7 @@ app.directive('pzGraphVis', function() {
                                 j++;
                             }
                         }
+                        scope.resetClicks();
                         update();
                     } else {
                         scope.alertClickedNode(d,i);
@@ -250,11 +291,19 @@ app.directive('pzGraphVis', function() {
                     .attr('text-anchor', 'middle')
                     .attr("dy", ".35em")
                     .text(function(d, i) { return d.name; })
+                    .attr('id', function(d, i) {
+                        return "node_text_" + i;
+                    })
                     .on('click', function(d, i) {
                         nodeClick(d, i);
                     });
-                nodeInnerLabels.exit().remove(); // TODO: make it fade out nicely?
-                // TODO: make nodeText and linkText scales. Also transition().
+                nodeInnerLabels.exit().remove();
+
+                for (var i = 0, len = scope.dataset.nodes.length; i < len; i++) {
+                    var node = scope.dataset.nodes[i];
+                    d3.select('text#node_text_' + i).text(node.name);
+                }
+                
 
                 var linkText = svg.selectAll("g.linklabelholder")
                     .data(forceLayout.links());
@@ -267,9 +316,14 @@ app.directive('pzGraphVis', function() {
                     .style("font-size", "20px")
                     .on('click', function(d, i) {
                         d3.event.stopPropagation();
-                        //alert(i);
-                        //scope.dataset.edges[i].weight = 3;
-                        d.weight *= 2;
+                        if (d3.event.shiftKey) {
+                            scope.dataset.edges.splice(i, 1);
+                            if (i === scope.selectedEdge) {
+                                scope.selectedEdge = -1;
+                            }
+                        } else {
+                            scope.alertClickedEdge(d,i);
+                        }
                         update();
                     })
                     .text(function(d) { 
@@ -278,13 +332,23 @@ app.directive('pzGraphVis', function() {
                     .attr('id', function(d, i) {
                         return "link_text_" + i;
                     });
-                    for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
-                        var edge = scope.dataset.edges[i];
-                        d3.select('text#link_text_' + i).text(edge.weight);
-                    }
+
+                for (var i = 0, len = scope.dataset.edges.length; i < len; i++) {
+                    var edge = scope.dataset.edges[i];
+                    d3.select('text#link_text_' + i)
+                        .text(edge.weight)
+                        .style('fill', function() {
+                            if (i === scope.selectedEdge) {
+                                return "#f00";
+                            } else {
+                                return "#000";
+                            }
+                        });
+                }
                 linkText.exit().remove();
 
                 forceLayout.linkDistance(function(d, i) {
+                    calculateScales();
                     return weightScale(d.weight);
                 });
 

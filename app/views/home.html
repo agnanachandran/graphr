@@ -11,12 +11,12 @@
     <div class="row">
         <div class="checkbox col-md-1">
             <label id="freeze-nodes">
-                <input type="checkbox" ng-model="frozen" ng-change=freezeNodes(frozen)> Freeze Nodes
+                <input type="checkbox" class="large checkbox" ng-model="frozen" ng-change=freezeNodes(frozen)> Freeze Nodes
             </label>
         </div>
         <div class="col-md-2">
             <label>
-                <input id="edgeInput" type="number" min="0" max="100" value="0" step="1" ng-model="value" ng-change=updateNodeOrEdge(value)> Update Node
+                <input id="edgeInput" type="number" min="0" max="9999" value="0" step="1" maxlength="4" ng-model="edgeValue" ng-change=updateNodeOrEdge(edgeValue)> Update Weight
             </label>
         </div>
         <div class="col-md-2">

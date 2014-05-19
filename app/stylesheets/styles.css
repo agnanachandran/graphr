@@ -44,7 +44,10 @@
   margin-top: 10px; }
 
 #edgeInput {
-  color: black; }
+  color: black;
+  margin-left: 20px;
+  margin-bottom: 20px;
+  margin-top: 10px; }
 
 #freeze-nodes {
   font-size: 16px; }
