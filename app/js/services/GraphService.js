@@ -3,15 +3,15 @@ angular.module('GraphService', []).factory('Graph', ['$http', function($http) {
     return {
         // call to get all graphs
         get: function(graphName) {
-            return $http.get('http://localhost:8080/graphs/' + graphName);
+            return $http.get('/graphs/' + graphName);
         },
 
         getAll: function() {
-            return $http.get('http://localhost:8080/graphs/');
+            return $http.get('/graphs/');
         },
 
         create: function(graphData) {
-            return $http.post('http://localhost:8080/graphs/', graphData);
+            return $http.post('/graphs/', graphData);
         }
 
         //delete: function(id) {

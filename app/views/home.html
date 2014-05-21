@@ -19,7 +19,7 @@
                 <input id="edgeInput" type="number" min="0" max="9999" value="0" step="1" maxlength="4" ng-model="edgeValue" ng-change=updateNodeOrEdge(edgeValue)> Update Weight
             </label>
         </div>
-        <div class="col-xs-1 col-xs-offset-2">
+        <div class="col-xs-2 col-xs-offset-2">
             <select class="form-control" id="choose-graph" ng-model="graph" ng-change=changeDataset(graph) ng-options="graph.name for graph in graphList">
                 <option value="">Choose graph</option>
             </select>

@@ -15,7 +15,7 @@ app.controller('MainController', ['$scope', 'Graph', function($scope, graphServi
     }
 
     $scope.updateNodeOrEdge = function(value) {
-        if (this.selectedEdge >= 0 && !isNaN(value) && value < 9999) {
+        if (this.selectedEdge >= 0 && !isNaN(value) && value < 9999 && value > 0) {
             this.calculateScalesWithNewWeight(value);
             this.dataset.edges[this.selectedEdge].weight = value;
             this.update();
@@ -154,7 +154,7 @@ app.directive('pzGraphVis', function() {
 
             var maxWeight;
             var weightScale;
-            var counterForNewNode = 0;
+            var counterForNewNode = scope.dataset.nodes.length;
 
             var calculateScalesWithNewWeight = function (newWeight) {
                 if (newWeight > maxWeight) {
@@ -232,6 +232,8 @@ app.directive('pzGraphVis', function() {
 
             function update() {
 
+                counterForNewNode = Math.max(counterForNewNode, scope.dataset.nodes.length);
+
                 // TODO: make new links somehow draw below the nodes so that edges don't appear on top of nodes
                 forceLayout.nodes(scope.dataset.nodes).links(scope.dataset.edges);
                 if (scope.dataset.nodes.length) {
@@ -289,6 +291,9 @@ app.directive('pzGraphVis', function() {
                         var j = 0;
                         while (j < scope.dataset.edges.length) {
                             if (scope.dataset.edges[j].source.index === i || scope.dataset.edges[j].target.index === i) {
+                                if (scope.selectedEdge === j) {
+                                    scope.selectedEdge = -1;
+                                }
                                 scope.dataset.edges.splice(j, 1);
                             } else {
                                 j++;

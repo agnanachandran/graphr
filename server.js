@@ -8,9 +8,10 @@ var db = require('./config/db');
 var Schema = mongoose.Schema;
 var ObjectId = Schema.ObjectId;
 var Factory = require('./module.factory.js');
+var dbUrl = process.env.MONGOLAB_URI || db.url;
 // Database
 
-mongoose.connect(db.url); // connect to mongoDB database
+mongoose.connect(dbUrl); // connect to mongoDB database
 var db = mongoose.connection;
 
 db.on('error', function callback() {
